@@ -12,5 +12,4 @@ app.listen(port, () => {
     console.log("meu servidor está escutando na porta " + port);
 })
 
-app.use("/criar", clientRota);
-app.use("/criar/buscar", clientRota);
+app.use("/user", clientRota);

@@ -39,5 +39,25 @@ export class RepositoryClient{
         }
     }
 
+    async getById(id) {
+        try {
+            const connection = ConexaoPrisma.gerarConexao();
+    
+            // Busca o cliente pelo ID
+            const getIdClient = await connection.cliente.findUnique({
+                where: { id: id },
+            });
+            console.log(getIdClient)
+            if (!getIdClient) {
+                throw new Error("Cliente não encontrado");
+            }
+            return getIdClient;
+    
+        } catch (error) {
+            console.error("Erro ao buscar cliente por ID:", error);
+            throw new Error("Erro interno no servidor");
+        }
+    } 
+
 }
 
