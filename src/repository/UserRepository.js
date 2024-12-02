@@ -1,22 +1,27 @@
 import { ConexaoPrisma } from "../app/connection.js";
-import bycript from "bcrypt"
-
+import bcript from "bcrypt"
+import validator from "validator";
 
 export class RepositoryClient{
 
     async createClient (body){
         try {
             const connection = ConexaoPrisma.gerarConexao()
+            if(!validator.isEmail(body.email)){
+                throw new Error("Formato de e-mail inválido.")
+            }
+
             console.log("Buscando cliente com o email:", body.email);
 
         const client = await connection.cliente.findUnique({where:{email:body.email}})
 
+
         if(!client){
-            const senhaCriptografada = bycript.hashSync(body.senha,10)
+            const senhaCriptografada = await bcript.hash(body.senha,10)
             console.log("Senha criptografada:", senhaCriptografada);
 
             const newClient = await connection.cliente.create(
-                {data:{senha:senhaCriptografada, ...body}});
+                {data:{...body, senha: senhaCriptografada}});
                 console.log("Novo cliente criado:", newClient);
 
             return {mensagem: "cliente cadastrado com sucesso, seja bem vindo " + newClient.nome }
@@ -59,5 +64,32 @@ export class RepositoryClient{
         }
     } 
 
+    async TogglerStatus(id, isActive){
+        const connection = ConexaoPrisma.gerarConexao();
+
+        // Verifica se o usuário existe
+        const user = await connection.cliente.findUnique({
+            where: { id: Number(id) },
+        });
+    
+        if (!user) {
+            throw new Error("Usuário não encontrado.");
+        }
+    
+        if (user.active === isActive) {
+            throw new Error(`Usuário já está ${isActive ? "ativo" : "inativo"}.`);
+        }
+    
+        // Atualiza o campo `active` com o novo status
+        const updatedUser = await connection.cliente.update({
+            where: { id: Number(id) },
+            data: { active: isActive },
+        });
+    
+        return {
+            message: `Usuário ${isActive ? "ativado" : "desativado"} com sucesso.`,
+            user: updatedUser,
+        };
+    }
 }
 
