@@ -1,6 +1,7 @@
 import { ConexaoPrisma } from "../app/connection.js";
 import bcript from "bcrypt"
 import validator from "validator";
+import jwt from "jsonwebtoken"
 
 export class RepositoryClient{
 
@@ -90,6 +91,37 @@ export class RepositoryClient{
             message: `Usuário ${isActive ? "ativado" : "desativado"} com sucesso.`,
             user: updatedUser,
         };
+    }
+
+    async loginUser(email, senha) {
+        const connection = ConexaoPrisma.gerarConexao();
+
+        try {
+            // Busca o usuário pelo email
+            const user = await connection.cliente.findUnique({ where: { email } });
+
+            if (!user) {
+                throw new Error("Usuário não encontrado.");
+            }
+
+            // Verifica se a senha está correta
+            const senhaValida = await bcript.compare(senha, user.senha);
+            if (!senhaValida) {
+                throw new Error("Senha inválida.");
+            }
+
+            // Gera o token JWT
+            const token = jwt.sign(
+                { id: user.id, email: user.email },
+                process.env.SECRET_KEY ,
+                { expiresIn: '1h' }
+            );
+
+            return { token, user };
+        } catch (error) {
+            console.error("Erro ao fazer login:", error.message);
+            throw error;
+        }
     }
 }
 

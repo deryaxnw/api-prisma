@@ -66,4 +66,31 @@ export class ClientController {
             return res.status(500).json({ error: "Falha ao atualizar o status do usuário." });
         }
     }
+
+    static async login(req, res) {
+        const { email, senha } = req.body;
+
+        try {
+            // Validação dos campos
+            if (!email || !senha) {
+                return res.status(400).json({ error: "Email e senha são obrigatórios." });
+            }
+
+            // Chama o método de login do repositório
+            const { token, user } = await clientRepository.loginUser(email, senha);
+
+            // Retorna o token e informações básicas do usuário
+            return res.status(200).json({ 
+                message: "Login realizado com sucesso.", 
+                token, 
+                user: { id: user.id, nome: user.nome, email: user.email } 
+            });
+        } catch (error) {
+            if (error.message === "Usuário não encontrado." || error.message === "Senha inválida.") {
+                return res.status(401).json({ error: error.message });
+            }
+
+            return res.status(500).json({ error: "Erro ao realizar login." });
+        }
+    }
 }
